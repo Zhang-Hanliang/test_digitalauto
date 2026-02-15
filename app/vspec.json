@@ -1,1 +1,14 @@
-{}
+{
+	"Vehicle": {
+		"type": "branch",
+		"description": "Root of vehicle signals.",
+		"children": {
+			"Speed": {
+				"type": "sensor",
+				"datatype": "float",
+				"unit": "km/h",
+				"description": "Vehicle speed."
+			}
+		}
+	}
+}
