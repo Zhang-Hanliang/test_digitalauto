@@ -12,14 +12,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# flake8: noqa: E501,B950 line too long
-import time
-import signal
-import asyncio
+"""A sample skeleton vehicle app."""
+
 import asyncio
 import json
 import logging
-import signal
 
 from vehicle import Vehicle, vehicle  # type: ignore
 from velocitas_sdk.util.log import (  # type: ignore
@@ -27,7 +24,8 @@ from velocitas_sdk.util.log import (  # type: ignore
     get_opentelemetry_log_format,
 )
 from velocitas_sdk.vdb.reply import DataPointReply
-from velocitas_sdk.vehicle_app import VehicleApp
+from velocitas_sdk.vehicle_app import VehicleApp, subscribe_topic
+
 
 # Configure the VehicleApp logger with the necessary log config and level.
 logging.setLogRecordFactory(get_opentelemetry_log_factory())
@@ -36,36 +34,55 @@ logging.getLogger().setLevel("DEBUG")
 logger = logging.getLogger(__name__)
 
 
-class TestApp(VehicleApp):
-    """Velocitas App for testdigitalauto."""
+GET_SPEED_REQUEST_TOPIC = "sampleapp/getSpeed"
+GET_SPEED_RESPONSE_TOPIC = "sampleapp/getSpeed/response"
+DATABROKER_SUBSCRIPTION_TOPIC = "sampleapp/currentSpeed"
+
+
+class TestDigitalAutoApp(VehicleApp):
+    """Sample skeleton vehicle app for this repository."""
 
     def __init__(self, vehicle_client: Vehicle):
         super().__init__()
         self.Vehicle = vehicle_client
-        self.self.Vehicle = None
-        self.value = None
-        self.vehicle_app = None
-        self.LOOP = None
 
-    async def on_start(self):
-        self.LOOP = asyncio.get_event_loop()
-        LOOP.add_signal_handler(signal.SIGTERM, LOOP.stop)
-        LOOP.run_until_complete(main())
-        LOOP.close()
+    async def on_start(self) -> None:
+        await self.Vehicle.Speed.subscribe(self.on_speed_change)
 
-    async def main(self, data: DataPointReply):
-         = data.get(undefined).value
-        self.vehicle_app = TestApp(vehicle)
-        await vehicle_app.run()
+    async def on_speed_change(self, data: DataPointReply) -> None:
+        vehicle_speed = data.get(self.Vehicle.Speed).value
+        await self.publish_event(
+            DATABROKER_SUBSCRIPTION_TOPIC,
+            json.dumps({"speed": vehicle_speed}),
+        )
+
+    @subscribe_topic(GET_SPEED_REQUEST_TOPIC)
+    async def on_get_speed_request_received(self, data: str) -> None:
+        logger.debug(
+            "PubSub event for the Topic: %s -> received with data: %s",
+            GET_SPEED_REQUEST_TOPIC,
+            data,
+        )
+
+        vehicle_speed = (await self.Vehicle.Speed.get()).value
+
+        await self.publish_event(
+            GET_SPEED_RESPONSE_TOPIC,
+            json.dumps(
+                {
+                    "result": {
+                        "status": 0,
+                        "message": f"Current Speed = {vehicle_speed}",
+                    }
+                }
+            ),
+        )
 
 
-async def main():
-    logger.info("Starting TestdigitalautoApp...")
-    vehicle_app = TestdigitalautoApp(vehicle)
-    await vehicle_app.run()
+async def main() -> None:
+    logger.info("Starting TestDigitalAutoApp...")
+    await TestDigitalAutoApp(vehicle).run()
 
 
-LOOP = asyncio.get_event_loop()
-LOOP.add_signal_handler(signal.SIGTERM, LOOP.stop)
-LOOP.run_until_complete(main())
-LOOP.close()
+if __name__ == "__main__":
+    asyncio.run(main())
