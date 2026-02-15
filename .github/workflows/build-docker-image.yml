@@ -63,9 +63,73 @@ jobs:
         with:
           credentials: https://user:${{ secrets.GITHUB_TOKEN }}@github.com/
 
-      - name: Init velocitas project
+      - name: Ensure Velocitas CLI version
+        shell: bash
         run: |
+          set -euo pipefail
+          desired=$(python3 -c "import json; print(json.load(open('.velocitas.json'))['cliVersion'])")
+          echo "Desired Velocitas CLI: ${desired}"
+          url="https://github.com/eclipse-velocitas/cli/releases/download/${desired}/velocitas-linux-x64"
+          echo "Downloading ${url}"
+          curl -fsSL "${url}" -o /usr/local/bin/velocitas
+          chmod +x /usr/local/bin/velocitas
+          velocitas --version
+
+      - name: Init velocitas project
+        id: velocitas_init
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          velocitas --version
           velocitas init
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ $code -ne 0 ]; then
+            echo "::group::Velocitas init diagnostics (build-image)"
+            echo "pwd=$(pwd)"
+            ls -la
+
+            echo "--- .velocitas.json ---"
+            cat .velocitas.json || true
+            echo "--- app/AppManifest.json ---"
+            cat app/AppManifest.json || true
+
+            echo "--- gen/ ---"
+            ls -la gen || true
+            ls -la gen/vehicle_model || true
+
+            echo "--- find logs / vspec / generated model ---"
+            find . -maxdepth 6 -type f \( -iname "*.log" -o -iname "*vspec*" -o -iname "vss*.json" -o -iname "*vehicle_model*" -o -path "*/.velocitas/*" \) -print | head -n 200 || true
+
+            echo "--- preview first lines of vspec-like files (if any) ---"
+            for f in $(find . -maxdepth 6 -type f \( -iname "*vspec*" -o -iname "vss*.json" \) 2>/dev/null | head -n 5); do
+              echo "### ${f}"
+              head -n 20 "${f}" || true
+            done
+
+            echo "::endgroup::"
+          fi
+          exit 0
+
+      - name: Upload velocitas debug artifacts (build-image)
+        if: steps.velocitas_init.outputs.exit_code != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: velocitas-debug-build-image-${{ inputs.platform }}
+          path: |
+            .velocitas/**
+            gen/**
+            app/AppManifest.json
+            .velocitas.json
+          if-no-files-found: warn
+
+      - name: Fail job if velocitas init failed (build-image)
+        if: steps.velocitas_init.outputs.exit_code != '0'
+        shell: bash
+        run: |
+          echo "velocitas init failed with exit code ${{ steps.velocitas_init.outputs.exit_code }}"
+          exit 1
 
       - name: Setup git config
         shell: bash
