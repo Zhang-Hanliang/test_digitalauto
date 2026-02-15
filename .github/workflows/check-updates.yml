@@ -17,8 +17,9 @@ name: Automatic Package Update Check
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 4 * * *"
+  # schedule disabled 2026-02-15 (restore: uncomment the next 2 lines; was: "0 4 * * *")
+  # schedule:
+  #   - cron: "0 4 * * *"
 
 jobs:
   package_update_check:
