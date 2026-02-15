@@ -59,13 +59,6 @@ jobs:
         with:
           string: ${{ github.repository }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: de-vri-es/setup-git-credentials@v2
         with:
           credentials: https://user:${{ secrets.GITHUB_TOKEN }}@github.com/
@@ -168,7 +161,6 @@ jobs:
         with:
           provenance: false
           pull: true
-          push: true
           outputs: |
             type=oci,dest=./${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar
           file: ./app/Dockerfile
@@ -177,8 +169,8 @@ jobs:
           secrets: |
             "github_token=user:${{ secrets.GITHUB_TOKEN }}"
           tags: |
-            ghcr.io/${{ steps.github-repository-name-case-adjusted.outputs.lowercase }}/${{ env.APP_NAME }}:${{ github.sha }}
-            ghcr.io/${{ steps.github-repository-name-case-adjusted.outputs.lowercase }}/${{ env.APP_NAME }}:latest
+            ${{ github.repository }}:${{ github.sha }}
+            ${{ github.repository }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{steps.github-repository-name-case-adjusted.outputs.lowercase}}
 
@@ -192,18 +184,17 @@ jobs:
         run: |
           OCI_TAR=${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar
 
-          # Inspect the archive (no embedded reference; use override for deterministic arch)
-          skopeo inspect --raw oci-archive:${OCI_TAR} | jq
-          skopeo inspect --override-arch amd64 --override-os linux oci-archive:${OCI_TAR}
+          # Inspect the archive (embedded reference to select the correct index entry)
+          skopeo inspect --raw oci-archive:${OCI_TAR}:${{ github.repository }}:${{ github.sha }} | jq
           for arch in ${{ steps.set_args.outputs.archs }}; do
-            skopeo copy --override-arch "$arch" --override-os linux oci-archive:${OCI_TAR} docker-archive:${{ env.APP_NAME }}-docker-$arch.tar
+            skopeo copy oci-archive:${OCI_TAR}:${{ github.repository }}:${{ github.sha }}@$arch docker-archive:${{ env.APP_NAME }}-docker-$arch.tar
           done
 
       - name: "${{ env.APP_NAME }} -- Get Native Binaries from image"
         run: |
           for arch in ${{ steps.set_args.outputs.archs }}; do
             image=$(docker load -i ${{ env.APP_NAME }}-docker-$arch.tar | cut -d ':' -f 3)
-            id=$(docker create $image --platform linux/$arch)
+            id=$(docker create $image)
             mkdir -p ./out
             app_name=$(echo ${{ env.APP_NAME }}_$arch | tr '[:upper:]' '[:lower:]')
             docker cp $id:/app ./out/$app_name
