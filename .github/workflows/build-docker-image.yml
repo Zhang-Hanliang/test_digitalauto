@@ -59,6 +59,14 @@ jobs:
         with:
           string: ${{ github.repository }}
 
+      # Added: login to GHCR so we can push an extra package image when build completes.
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: de-vri-es/setup-git-credentials@v2
         with:
           credentials: https://user:${{ secrets.GITHUB_TOKEN }}@github.com/
@@ -161,7 +169,8 @@ jobs:
         with:
           provenance: false
           pull: true
-          push: false
+          # Changed: also push to GHCR to publish a package image.
+          push: true
           outputs: |
             type=oci,dest=./${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar
           file: ./app/Dockerfile
@@ -169,7 +178,9 @@ jobs:
           platforms: ${{ steps.set_args.outputs.platforms }}
           secrets: |
             "github_token=user:${{ secrets.GITHUB_TOKEN }}"
-          tags: ${{ github.sha }}
+          tags: |
+            ghcr.io/${{ steps.github-repository-name-case-adjusted.outputs.lowercase }}/${{ env.APP_NAME }}:${{ github.sha }}
+            ghcr.io/${{ steps.github-repository-name-case-adjusted.outputs.lowercase }}/${{ env.APP_NAME }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{steps.github-repository-name-case-adjusted.outputs.lowercase}}
 
