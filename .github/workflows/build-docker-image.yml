@@ -184,10 +184,11 @@ jobs:
         run: |
           OCI_TAR=${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar
 
-          # Inspect the archive (embedded reference to select the correct index entry)
-          skopeo inspect --raw oci-archive:${OCI_TAR}:${{ github.repository }}:${{ github.sha }} | jq
+          # Inspect the archive and extract per-arch images without registry references
+          skopeo inspect --raw oci-archive:${OCI_TAR} | jq
+          skopeo inspect --override-arch amd64 --override-os linux oci-archive:${OCI_TAR}
           for arch in ${{ steps.set_args.outputs.archs }}; do
-            skopeo copy oci-archive:${OCI_TAR}:${{ github.repository }}:${{ github.sha }}@$arch docker-archive:${{ env.APP_NAME }}-docker-$arch.tar
+            skopeo copy --override-arch "$arch" --override-os linux oci-archive:${OCI_TAR} docker-archive:${{ env.APP_NAME }}-docker-$arch.tar
           done
 
       - name: "${{ env.APP_NAME }} -- Get Native Binaries from image"
