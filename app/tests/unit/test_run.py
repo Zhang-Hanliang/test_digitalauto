@@ -40,9 +40,7 @@ async def test_for_get_speed():
         new_callable=mock.AsyncMock,
         return_value=result,
     ):
-        current_speed = (
-            await vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()
-        ).value
+        current_speed = (await vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()).value
         print(f"Received wheel speed: {current_speed}")
         assert current_speed == MOCKED_SPEED
 
