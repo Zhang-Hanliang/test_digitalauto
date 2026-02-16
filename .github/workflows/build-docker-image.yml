@@ -161,6 +161,7 @@ jobs:
         with:
           provenance: false
           pull: true
+          push: false
           outputs: |
             type=oci,dest=./${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar
           file: ./app/Dockerfile
@@ -168,9 +169,7 @@ jobs:
           platforms: ${{ steps.set_args.outputs.platforms }}
           secrets: |
             "github_token=user:${{ secrets.GITHUB_TOKEN }}"
-          tags: |
-            ${{ github.repository }}:${{ github.sha }}
-            ${{ github.repository }}:latest
+          tags: ${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{steps.github-repository-name-case-adjusted.outputs.lowercase}}
 
@@ -182,20 +181,17 @@ jobs:
       - name: "${{ env.APP_NAME }} -- Inspect image with skopeo and create docker archives"
         id: inspect_tar
         run: |
-          OCI_TAR=${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar
-
-          # Inspect the archive and extract per-arch images without registry references
-          skopeo inspect --raw oci-archive:${OCI_TAR} | jq
-          skopeo inspect --override-arch amd64 --override-os linux oci-archive:${OCI_TAR}
+          skopeo inspect --raw oci-archive:${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar | jq
+          skopeo inspect oci-archive:${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar
           for arch in ${{ steps.set_args.outputs.archs }}; do
-            skopeo copy --override-arch "$arch" --override-os linux oci-archive:${OCI_TAR} docker-archive:${{ env.APP_NAME }}-docker-$arch.tar
+            skopeo copy --override-arch $arch oci-archive:${{ env.APP_NAME }}-oci-${{inputs.platform}}.tar docker-archive:${{ env.APP_NAME }}-docker-$arch.tar
           done
 
       - name: "${{ env.APP_NAME }} -- Get Native Binaries from image"
         run: |
           for arch in ${{ steps.set_args.outputs.archs }}; do
             image=$(docker load -i ${{ env.APP_NAME }}-docker-$arch.tar | cut -d ':' -f 3)
-            id=$(docker create $image)
+            id=$(docker create $image --platform linux/$arch)
             mkdir -p ./out
             app_name=$(echo ${{ env.APP_NAME }}_$arch | tr '[:upper:]' '[:lower:]')
             docker cp $id:/app ./out/$app_name
