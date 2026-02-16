@@ -54,9 +54,7 @@ class TestDigitalAutoApp(VehicleApp):
 
     async def on_speed_change(self, data: DataPointReply) -> None:
         """Handle wheel speed change events."""
-        vehicle_speed = data.get(
-            self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed
-        ).value
+        vehicle_speed = data.get(self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed).value
         await self.publish_event(
             DATABROKER_SUBSCRIPTION_TOPIC,
             json.dumps({"speed": vehicle_speed}),
@@ -71,9 +69,7 @@ class TestDigitalAutoApp(VehicleApp):
             data,
         )
 
-        vehicle_speed = (
-            await self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()
-        ).value
+        vehicle_speed = (await self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()).value
 
         await self.publish_event(
             GET_SPEED_RESPONSE_TOPIC,
