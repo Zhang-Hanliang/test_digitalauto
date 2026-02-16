@@ -69,7 +69,9 @@ class TestDigitalAutoApp(VehicleApp):
             data,
         )
 
-        vehicle_speed = (await self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()).value
+        vehicle_speed = (
+            await self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()
+        ).value
 
         await self.publish_event(
             GET_SPEED_RESPONSE_TOPIC,
