@@ -18,39 +18,41 @@ import pytest
 from velocitas_sdk.test.inttesthelper import IntTestHelper
 from velocitas_sdk.test.mqtt_util import MqttClient
 
-# GET_SPEED_REQUEST_TOPIC = "sampleapp/getSpeed"
-# GET_SPEED_RESPONSE_TOPIC = "sampleapp/getSpeed/response"
+GET_SPEED_REQUEST_TOPIC = "sampleapp/getSpeed"
+GET_SPEED_RESPONSE_TOPIC = "sampleapp/getSpeed/response"
 
 
 @pytest.mark.asyncio
 async def test_get_current_speed():
+    """Test VSS v5 wheel speed via MQTT request-response."""
     mqtt_client = MqttClient()
     inttesthelper = IntTestHelper()
-    print(f"{mqtt_client} can be used when your app compiles succesfully!")
-    print(f"{inttesthelper} can be used when your app compiles succesfully!")
+    print(f"[DEBUG] mqtt_client initialized: {mqtt_client}")
+    print(f"[DEBUG] inttesthelper initialized: {inttesthelper}")
 
-    # When your app compiles succesfully use the inttesthelper to get viable responses
-    response = "{}"
-    # response = await inttesthelper.set_float_datapoint(
-    #     name="Vehicle.Speed", value=0
-    # )
+    # Set VSS v5 wheel speed datapoint
+    print("[DEBUG] Setting Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed to 50.0")
+    response = await inttesthelper.set_float_datapoint(
+        name="Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed", value=50.0
+    )
+    print(f"[DEBUG] set_float_datapoint response errors: {response.errors}")
 
-    # assert len(response.errors) == 0
+    assert len(response.errors) == 0
 
-    # response = mqtt_client.publish_and_wait_for_response(
-    #     request_topic=GET_SPEED_REQUEST_TOPIC,
-    #     response_topic=GET_SPEED_RESPONSE_TOPIC,
-    #     payload={},
-    # )
+    # Request speed via MQTT
+    print(f"[DEBUG] Publishing to {GET_SPEED_REQUEST_TOPIC}")
+    response = mqtt_client.publish_and_wait_for_response(
+        request_topic=GET_SPEED_REQUEST_TOPIC,
+        response_topic=GET_SPEED_RESPONSE_TOPIC,
+        payload={},
+    )
+    print(f"[DEBUG] Raw MQTT response: {response}")
 
     body = json.loads(response)
-    # add expected message to get it assert
-    expected_message = "Current Speed = 0.0"
+    expected_message = "Current Wheel Speed = 50.0"
 
     print(f"Received response: {body}")
     print(f"Expected message: {expected_message}")
 
-    # Uncomment to test the behaviour of the SampleApp as provided by
-    #     the template repository:
-    # assert body["result"]["status"] == 0
-    # assert body["result"]["message"] == expected_message
+    assert body["result"]["status"] == 0
+    assert body["result"]["message"] == expected_message
