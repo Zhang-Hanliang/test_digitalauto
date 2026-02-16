@@ -12,14 +12,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import json
+# import json  # noqa: ERA001
 
 import pytest
-from velocitas_sdk.test.inttesthelper import IntTestHelper
-from velocitas_sdk.test.mqtt_util import MqttClient
+from velocitas_sdk.test.inttesthelper import IntTestHelper  # noqa: F401
+from velocitas_sdk.test.mqtt_util import MqttClient  # noqa: F401
 
-GET_SPEED_REQUEST_TOPIC = "sampleapp/getSpeed"
-GET_SPEED_RESPONSE_TOPIC = "sampleapp/getSpeed/response"
+GET_SPEED_REQUEST_TOPIC = "sampleapp/getSpeed"  # noqa: F841
+GET_SPEED_RESPONSE_TOPIC = "sampleapp/getSpeed/response"  # noqa: F841
 
 
 @pytest.mark.asyncio
