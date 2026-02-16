@@ -17,10 +17,10 @@
 from unittest import mock
 
 import pytest
+from google.protobuf.timestamp_pb2 import Timestamp
 from vehicle import vehicle  # type: ignore
 from velocitas_sdk.vdb.types import TypedDataPointResult  # type: ignore
 from velocitas_sdk.vehicle_app import VehicleApp  # type: ignore
-from vspec.proto.types_pb2 import Timestamp  # type: ignore
 
 MOCKED_SPEED = 42.5
 
