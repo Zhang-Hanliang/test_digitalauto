@@ -14,43 +14,52 @@
 
 # skip B101
 
+from unittest import mock
 
-MOCKED_SPEED = 0.0
+import pytest
+from vehicle import vehicle  # type: ignore
+from velocitas_sdk.vdb.types import TypedDataPointResult  # type: ignore
+from velocitas_sdk.vehicle_app import VehicleApp  # type: ignore
+from vspec.proto.types_pb2 import Timestamp  # type: ignore
+
+MOCKED_SPEED = 42.5
 
 
 def test_dummy():
     pass
 
 
-# @pytest.mark.asyncio
-# async def test_for_get_speed():
-#     result = TypedDataPointResult("foo", MOCKED_SPEED, Timestamp(seconds=10, nanos=0))
-#
-#     with mock.patch.object(
-#         vehicle.Chassis.Axle.Row1.Wheel.Left.Speed,
-#         "get",
-#         new_callable=mock.AsyncMock,
-#         return_value=result,
-#     ):
-#         current_speed = (
-#             await vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()
-#         ).value
-#         print(f"Received wheel speed: {current_speed}")
-#         # assert current_speed == MOCKED_SPEED
+@pytest.mark.asyncio
+async def test_for_get_speed():
+    """Test getting wheel speed from VSS v5 datapoint."""
+    result = TypedDataPointResult("foo", MOCKED_SPEED, Timestamp(seconds=10, nanos=0))
+
+    with mock.patch.object(
+        vehicle.Chassis.Axle.Row1.Wheel.Left.Speed,
+        "get",
+        new_callable=mock.AsyncMock,
+        return_value=result,
+    ):
+        current_speed = (
+            await vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()
+        ).value
+        print(f"Received wheel speed: {current_speed}")
+        assert current_speed == MOCKED_SPEED
 
 
-# @pytest.mark.asyncio
-# async def test_for_publish_to_topic():
-#     with mock.patch.object(
-#         VehicleApp, "publish_mqtt_event", new_callable=mock.AsyncMock, return_value=-1
-#     ):
-#         response = await VehicleApp.publish_mqtt_event(
-#             str("sampleTopic"),  # type: ignore
-#             get_sample_response_data(),
-#         )
-#
-#         print(f"Received response: {response}")
-#         # assert response == -1
+@pytest.mark.asyncio
+async def test_for_publish_to_topic():
+    """Test MQTT event publishing."""
+    with mock.patch.object(
+        VehicleApp, "publish_mqtt_event", new_callable=mock.AsyncMock, return_value=-1
+    ):
+        response = await VehicleApp.publish_mqtt_event(
+            str("sampleTopic"),  # type: ignore
+            get_sample_response_data(),
+        )
+
+        print(f"Received response: {response}")
+        assert response == -1
 
 
 def get_sample_response_data():
