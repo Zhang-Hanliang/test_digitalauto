@@ -25,17 +25,17 @@ def test_dummy():
 # @pytest.mark.asyncio
 # async def test_for_get_speed():
 #     result = TypedDataPointResult("foo", MOCKED_SPEED, Timestamp(seconds=10, nanos=0))
-
+#
 #     with mock.patch.object(
-#         vehicle.Speed,
+#         vehicle.Chassis.Axle.Row1.Wheel.Left.Speed,
 #         "get",
 #         new_callable=mock.AsyncMock,
 #         return_value=result,
 #     ):
-#         current_speed = (await vehicle.Speed.get()).value
-#         print(f"Received speed: {current_speed}")
-#         # Uncomment to test the behaviour of the SampleApp as provided by
-#         #     the template repository:
+#         current_speed = (
+#             await vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()
+#         ).value
+#         print(f"Received wheel speed: {current_speed}")
 #         # assert current_speed == MOCKED_SPEED
 
 
@@ -48,16 +48,14 @@ def test_dummy():
 #             str("sampleTopic"),  # type: ignore
 #             get_sample_response_data(),
 #         )
-
+#
 #         print(f"Received response: {response}")
-#         # Uncomment to test the behaviour of the SampleApp as provided by
-#         #     the template repository:
 #         # assert response == -1
 
 
 def get_sample_response_data():
     return {
         "result": {
-            "message": f"""Current Speed = {MOCKED_SPEED}""",
+            "message": f"""Current Wheel Speed = {MOCKED_SPEED}""",
         },
     }

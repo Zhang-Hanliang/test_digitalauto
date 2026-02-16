@@ -7,7 +7,24 @@
             "config": {
                 "src": "./app/vspec.json",
                 "datapoints": {
-                    "required": []
+                    "required": [
+                        {
+                            "path": "Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed",
+                            "access": "read"
+                        },
+                        {
+                            "path": "Vehicle.Chassis.Axle.Row1.Wheel.Right.Speed",
+                            "access": "read"
+                        },
+                        {
+                            "path": "Vehicle.Chassis.Accelerator.PedalPosition",
+                            "access": "read"
+                        },
+                        {
+                            "path": "Vehicle.Chassis.Brake.PedalPosition",
+                            "access": "read"
+                        }
+                    ]
                 }
             }
         },

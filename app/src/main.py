@@ -12,7 +12,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""A sample skeleton vehicle app."""
+"""A sample Vehicle App based on mini-demo-car VSS v5."""
 
 import asyncio
 import json
@@ -40,17 +40,23 @@ DATABROKER_SUBSCRIPTION_TOPIC = "sampleapp/currentSpeed"
 
 
 class TestDigitalAutoApp(VehicleApp):
-    """Sample skeleton vehicle app for this repository."""
+    """Vehicle app using mini-demo-car VSS v5 signals."""
 
     def __init__(self, vehicle_client: Vehicle):
         super().__init__()
         self.Vehicle = vehicle_client
 
     async def on_start(self) -> None:
-        await self.Vehicle.Speed.subscribe(self.on_speed_change)
+        """Subscribe to wheel speed from VSS v5."""
+        await self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.subscribe(
+            self.on_speed_change
+        )
 
     async def on_speed_change(self, data: DataPointReply) -> None:
-        vehicle_speed = data.get(self.Vehicle.Speed).value
+        """Handle wheel speed change events."""
+        vehicle_speed = data.get(
+            self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed
+        ).value
         await self.publish_event(
             DATABROKER_SUBSCRIPTION_TOPIC,
             json.dumps({"speed": vehicle_speed}),
@@ -58,13 +64,16 @@ class TestDigitalAutoApp(VehicleApp):
 
     @subscribe_topic(GET_SPEED_REQUEST_TOPIC)
     async def on_get_speed_request_received(self, data: str) -> None:
+        """Handle speed request via PubSub."""
         logger.debug(
             "PubSub event for the Topic: %s -> received with data: %s",
             GET_SPEED_REQUEST_TOPIC,
             data,
         )
 
-        vehicle_speed = (await self.Vehicle.Speed.get()).value
+        vehicle_speed = (
+            await self.Vehicle.Chassis.Axle.Row1.Wheel.Left.Speed.get()
+        ).value
 
         await self.publish_event(
             GET_SPEED_RESPONSE_TOPIC,
@@ -72,7 +81,7 @@ class TestDigitalAutoApp(VehicleApp):
                 {
                     "result": {
                         "status": 0,
-                        "message": f"Current Speed = {vehicle_speed}",
+                        "message": f"Current Wheel Speed = {vehicle_speed}",
                     }
                 }
             ),
@@ -80,7 +89,7 @@ class TestDigitalAutoApp(VehicleApp):
 
 
 async def main() -> None:
-    logger.info("Starting TestDigitalAutoApp...")
+    logger.info("Starting TestDigitalAutoApp (VSS v5)...")
     await TestDigitalAutoApp(vehicle).run()
 
 
